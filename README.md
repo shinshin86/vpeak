@@ -9,6 +9,12 @@ Execute the following command to speak the string passed as an argument.
 vpeak こんにちは！
 ```
 
+Run the `help` command for more information.
+
+```
+vpeak -h
+```
+
 ## Support
 Tested only under the following conditions.
 
