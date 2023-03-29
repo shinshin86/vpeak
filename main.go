@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -12,8 +13,11 @@ func playCmd(wavName string) *exec.Cmd {
 }
 
 func main() {
+	narratorOpt := flag.String("n", "", "Specify the narrator")
+	flag.Parse()
+
 	if len(os.Args) < 2 {
-		log.Fatalf("Usage: %s <text>", os.Args[0])
+		log.Fatalf("Usage: %s [-n] <text>", os.Args[0])
 	}
 
 	voicepeakPath := "/Applications/voicepeak.app/Contents/MacOS/voicepeak"
@@ -22,8 +26,26 @@ func main() {
 		log.Fatalf("Command not found: %v", err)
 	}
 
-	text := os.Args[1]
-	cmd1 := exec.Command(voicepeakPath, "-s", text)
+	text := flag.Args()[0]
+
+	narratorMap := map[string]string{
+		"c":  "Japanese Female Child",
+		"m3": "Japanese Male 3",
+		"m2": "Japanese Male 2",
+		"m1": "Japanese Male 1",
+		"f3": "Japanese Female 3",
+		"f2": "Japanese Female 2",
+		"f1": "Japanese Female 1",
+	}
+
+	options := []string{"-s", text}
+	if narrator, ok := narratorMap[*narratorOpt]; ok {
+		options = append([]string{"--narrator", narrator}, options...)
+	} else if *narratorOpt != "" {
+		log.Fatalf("Invalid narrator option: %s", *narratorOpt)
+	}
+
+	cmd1 := exec.Command(voicepeakPath, options...)
 	err = cmd1.Run()
 	if err != nil {
 		log.Fatalf("voicepeak command failed: %v", err)
