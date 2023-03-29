@@ -13,8 +13,30 @@ func playCmd(wavName string) *exec.Cmd {
 }
 
 func main() {
-	narratorOpt := flag.String("n", "", "Specify the narrator")
+	narratorOpt := flag.String("n", "", "Specify the narrator. See below for options.")
+
+	flag.Usage = func() {
+		fmt.Printf("Usage: %s [OPTIONS] <text>\n", os.Args[0])
+		fmt.Println("Options:")
+		flag.PrintDefaults()
+		fmt.Println("\nNarrator options:")
+		fmt.Println("  f1: Japanese Female 1")
+		fmt.Println("  f2: Japanese Female 2")
+		fmt.Println("  f3: Japanese Female 3")
+		fmt.Println("  m1: Japanese Male 1")
+		fmt.Println("  m2: Japanese Male 2")
+		fmt.Println("  m3: Japanese Male 3")
+		fmt.Println("  c:  Japanese Female Child")
+	}
+
+	help := flag.Bool("help", false, "Show help")
+
 	flag.Parse()
+
+	if *help {
+		flag.Usage()
+		os.Exit(0)
+	}
 
 	if len(os.Args) < 2 {
 		log.Fatalf("Usage: %s [-n] <text>", os.Args[0])
@@ -29,13 +51,13 @@ func main() {
 	text := flag.Args()[0]
 
 	narratorMap := map[string]string{
-		"c":  "Japanese Female Child",
-		"m3": "Japanese Male 3",
-		"m2": "Japanese Male 2",
-		"m1": "Japanese Male 1",
-		"f3": "Japanese Female 3",
-		"f2": "Japanese Female 2",
 		"f1": "Japanese Female 1",
+		"f2": "Japanese Female 2",
+		"f3": "Japanese Female 3",
+		"m1": "Japanese Male 1",
+		"m2": "Japanese Male 2",
+		"m3": "Japanese Male 3",
+		"c":  "Japanese Female Child",
 	}
 
 	options := []string{"-s", text}
