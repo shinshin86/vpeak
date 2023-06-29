@@ -40,7 +40,7 @@ I am testing with 1.2.2.
 
 
 ## License
-MIT
+[MIT](./LICENSE)
 
 ## Author
 
