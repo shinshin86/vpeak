@@ -37,6 +37,7 @@ func convertWavExt(filename string) string {
 func main() {
 	dirOpt := flag.String("d", "", "Directory to read files from")
 	narratorOpt := flag.String("n", "", "Specify the narrator. See below for options.")
+	emotionOpt := flag.String("e", "", "Specify the emotion. See below for options.")
 
 	flag.Usage = func() {
 		fmt.Printf("Usage: %s [OPTIONS] <text>\n", os.Args[0])
@@ -50,6 +51,11 @@ func main() {
 		fmt.Println("  m2: Japanese Male 2")
 		fmt.Println("  m3: Japanese Male 3")
 		fmt.Println("  c:  Japanese Female Child")
+		fmt.Println("\nEmotion options:")
+		fmt.Println("  happy")
+		fmt.Println("  fun")
+		fmt.Println("  angry")
+		fmt.Println("  sad")
 	}
 
 	help := flag.Bool("help", false, "Show help")
@@ -75,6 +81,13 @@ func main() {
 		"c":  "Japanese Female Child",
 	}
 
+	emotionMap := map[string]string{
+		"happy": "happy=100",
+		"fun":   "fun=100",
+		"angry": "angry=100",
+		"sad":   "sad=100",
+	}
+
 	if *dirOpt == "" {
 		text := flag.Args()[0]
 		options := []string{"-s", text}
@@ -82,6 +95,12 @@ func main() {
 			options = append([]string{"--narrator", narrator}, options...)
 		} else if *narratorOpt != "" {
 			log.Fatalf("Invalid narrator option: %s", *narratorOpt)
+		}
+
+		if emotion, ok := emotionMap[*emotionOpt]; ok {
+			options = append([]string{"--emotion", emotion}, options...)
+		} else if *emotionOpt != "" {
+			log.Fatalf("Invalid emotion option: %s", *emotionOpt)
 		}
 
 		cmd1 := vpCmd(options)
@@ -123,6 +142,12 @@ func main() {
 					options = append([]string{"--narrator", narrator}, options...)
 				} else if *narratorOpt != "" {
 					log.Fatalf("Invalid narrator option: %s", *narratorOpt)
+				}
+
+				if emotion, ok := emotionMap[*emotionOpt]; ok {
+					options = append([]string{"--emotion", emotion}, options...)
+				} else if *emotionOpt != "" {
+					log.Fatalf("Invalid emotion option: %s", *emotionOpt)
 				}
 
 				cmd1 := vpCmd(options)

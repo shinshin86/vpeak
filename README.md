@@ -7,6 +7,9 @@ Execute the following command to speak the string passed as an argument.
 
 ```
 vpeak こんにちは！
+
+# option (narrator: Japanese Female 1, emotion: happy)
+vpeak -n f1 -e happy "こんにちは"
 ```
 
 Converts all text files(`.txt`) in the directory specified by the `-d` option to audio files (`.wav`).
@@ -36,7 +39,7 @@ Currently only **M1 or later(arm64) mac** are supported
 
 ### VOICEPEAK
 VOICEPEAK must be updated to the latest version in order to use vpeak.  
-I am testing with 1.2.2.
+I am testing with 1.2.7.
 
 
 ## License
