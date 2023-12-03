@@ -10,12 +10,18 @@ vpeak こんにちは！
 
 # option (narrator: Japanese Female 1, emotion: happy)
 vpeak -n f1 -e happy "こんにちは"
+
+# option (narrator: Japanese Female 1, emotion: happy, output path: ./hello.wav)
+vpeak -n f1 -e happy -o ./hello.wav "こんにちは"
 ```
 
 Converts all text files(`.txt`) in the directory specified by the `-d` option to audio files (`.wav`).
 
 ```
 vpeak -d your-dir
+
+# option (narrator: Japanese Female 1, emotion: happy)
+vpeak -n f1 -e happy -d your-dir
 ```
 
 Multiple options can be combined.

@@ -16,6 +16,28 @@ const (
 	WavName       = "output.wav"
 )
 
+var (
+	dirOpt      = flag.String("d", "", "Directory to read files from")
+	outputOpt   = flag.String("o", WavName, "Output file path")
+	narratorOpt = flag.String("n", "", "Specify the narrator. See below for options.")
+	emotionOpt  = flag.String("e", "", "Specify the emotion. See below for options.")
+	narratorMap = map[string]string{
+		"f1": "Japanese Female 1",
+		"f2": "Japanese Female 2",
+		"f3": "Japanese Female 3",
+		"m1": "Japanese Male 1",
+		"m2": "Japanese Male 2",
+		"m3": "Japanese Male 3",
+		"c":  "Japanese Female Child",
+	}
+	emotionMap = map[string]string{
+		"happy": "happy=100",
+		"fun":   "fun=100",
+		"angry": "angry=100",
+		"sad":   "sad=100",
+	}
+)
+
 func playCmd(wavName string) *exec.Cmd {
 	return exec.Command("afplay", wavName)
 }
@@ -34,11 +56,115 @@ func convertWavExt(filename string) string {
 	return strings.TrimSuffix(filename, oldExt) + ".wav"
 }
 
-func main() {
-	dirOpt := flag.String("d", "", "Directory to read files from")
-	narratorOpt := flag.String("n", "", "Specify the narrator. See below for options.")
-	emotionOpt := flag.String("e", "", "Specify the emotion. See below for options.")
+func processOptions() []string {
+	text := flag.Args()[0]
+	options := []string{"-s", text}
 
+	narrator, ok := narratorMap[*narratorOpt]
+
+	if !ok && *narratorOpt != "" {
+		log.Fatalf("Invalid narrator option: %s", *narratorOpt)
+	}
+	if ok {
+		options = append([]string{"--narrator", narrator}, options...)
+	}
+
+	emotion, ok := emotionMap[*emotionOpt]
+	if !ok && *emotionOpt != "" {
+		log.Fatalf("Invalid emotion option: %s", *emotionOpt)
+	}
+	if ok {
+		options = append([]string{"--emotion", emotion}, options...)
+	}
+
+	if *outputOpt != "" {
+		options = append([]string{"-o", *outputOpt}, options...)
+	}
+
+	return options
+}
+
+func executeCommands(options []string, output string) {
+	cmd1 := vpCmd(options)
+	handleError(cmd1.Run(), "voicepeak command failed")
+
+	cmd2 := playCmd(output)
+	handleError(cmd2.Run(), "wav file play failed")
+
+	if output == WavName {
+		handleError(os.Remove(WavName), fmt.Sprintf("Failed to delete %s", WavName))
+	}
+}
+
+func handleError(err error, message string) {
+	if err != nil {
+		log.Fatalf("%s: %v", message, err)
+	}
+}
+
+func readTextFile(filePath string) (string, error) {
+	content, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return "", err
+	}
+	return string(content), nil
+}
+
+func processTextFiles(dir string) {
+	files, err := ioutil.ReadDir(dir)
+	handleError(err, "Error reading directory")
+
+	for _, file := range files {
+		if !file.IsDir() && filepath.Ext(file.Name()) == ".txt" {
+			filePath := filepath.Join(dir, file.Name())
+			content, err := readTextFile(filePath)
+			if err != nil {
+				log.Printf("Error reading file (%s): %v", file.Name(), err)
+				continue
+			}
+
+			outputName := convertWavExt(file.Name())
+			outputPath := filepath.Join(dir, outputName)
+			options := buildOptions(content, outputPath)
+
+			executeCommands(options, outputPath)
+		}
+	}
+}
+
+func buildOptions(content, outputPath string) []string {
+	options := []string{"-s", content, "-o", outputPath}
+
+	addOption := func(key string, value string) {
+		if value != "" {
+			options = append([]string{key, value}, options...)
+		}
+	}
+
+	narrator, ok := narratorMap[*narratorOpt]
+	if !ok && *narratorOpt != "" {
+		log.Fatalf("Invalid narrator option: %s", *narratorOpt)
+	}
+	if ok {
+		addOption("--narrator", narrator)
+	}
+
+	emotion, ok := emotionMap[*emotionOpt]
+	if !ok && *emotionOpt != "" {
+		log.Fatalf("Invalid emotion option: %s", *emotionOpt)
+	}
+	if ok {
+		addOption("--emotion", emotion)
+	}
+
+	if *outputOpt != "" {
+		addOption("-o", *outputOpt)
+	}
+
+	return options
+}
+
+func main() {
 	flag.Usage = func() {
 		fmt.Printf("Usage: %s [OPTIONS] <text>\n", os.Args[0])
 		fmt.Println("Options:")
@@ -71,92 +197,15 @@ func main() {
 		log.Fatalf("Usage: %s [-n] <text>", os.Args[0])
 	}
 
-	narratorMap := map[string]string{
-		"f1": "Japanese Female 1",
-		"f2": "Japanese Female 2",
-		"f3": "Japanese Female 3",
-		"m1": "Japanese Male 1",
-		"m2": "Japanese Male 2",
-		"m3": "Japanese Male 3",
-		"c":  "Japanese Female Child",
-	}
-
-	emotionMap := map[string]string{
-		"happy": "happy=100",
-		"fun":   "fun=100",
-		"angry": "angry=100",
-		"sad":   "sad=100",
-	}
-
 	if *dirOpt == "" {
-		text := flag.Args()[0]
-		options := []string{"-s", text}
-		if narrator, ok := narratorMap[*narratorOpt]; ok {
-			options = append([]string{"--narrator", narrator}, options...)
-		} else if *narratorOpt != "" {
-			log.Fatalf("Invalid narrator option: %s", *narratorOpt)
+		options := processOptions()
+		output := WavName
+		if *outputOpt != "" {
+			output = *outputOpt
 		}
-
-		if emotion, ok := emotionMap[*emotionOpt]; ok {
-			options = append([]string{"--emotion", emotion}, options...)
-		} else if *emotionOpt != "" {
-			log.Fatalf("Invalid emotion option: %s", *emotionOpt)
-		}
-
-		cmd1 := vpCmd(options)
-		err := cmd1.Run()
-		if err != nil {
-			log.Fatalf("voicepeak command failed: %v", err)
-		}
-
-		cmd2 := playCmd(WavName)
-		err = cmd2.Run()
-		if err != nil {
-			log.Fatalf("wav file play failed: %v", err)
-		}
-
-		err = os.Remove(WavName)
-		if err != nil {
-			log.Fatalf("Failed to delete %s: %v", WavName, err)
-		}
+		executeCommands(options, output)
 	} else {
-		files, err := ioutil.ReadDir(*dirOpt)
-		if err != nil {
-			log.Fatalf("Error reading directory: %v", err)
-		}
-
-		for _, file := range files {
-			if !file.IsDir() && filepath.Ext(file.Name()) == ".txt" {
-				filePath := filepath.Join(*dirOpt, file.Name())
-				content, err := ioutil.ReadFile(filePath)
-
-				if err != nil {
-					log.Printf("Error reading file (%s): %v", file.Name(), err)
-					continue
-				}
-
-				outputName := convertWavExt(file.Name())
-				outputPath := filepath.Join(*dirOpt, outputName)
-				options := []string{"-s", string(content), "-o", outputPath}
-				if narrator, ok := narratorMap[*narratorOpt]; ok {
-					options = append([]string{"--narrator", narrator}, options...)
-				} else if *narratorOpt != "" {
-					log.Fatalf("Invalid narrator option: %s", *narratorOpt)
-				}
-
-				if emotion, ok := emotionMap[*emotionOpt]; ok {
-					options = append([]string{"--emotion", emotion}, options...)
-				} else if *emotionOpt != "" {
-					log.Fatalf("Invalid emotion option: %s", *emotionOpt)
-				}
-
-				cmd1 := vpCmd(options)
-				err = cmd1.Run()
-				if err != nil {
-					log.Fatalf("voicepeak command failed: %v", err)
-				}
-			}
-		}
+		processTextFiles(*dirOpt)
 	}
 
 	fmt.Println("Commands executed successfully")
