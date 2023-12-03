@@ -18,7 +18,7 @@ const (
 
 var (
 	dirOpt      = flag.String("d", "", "Directory to read files from")
-	outputOpt   = flag.String("o", WavName, "Output file path")
+	outputOpt   = flag.String("o", WavName, "Output file path (Specify the name of the output directory if reading by directory (-d option))")
 	narratorOpt = flag.String("n", "", "Specify the narrator. See below for options.")
 	emotionOpt  = flag.String("e", "", "Specify the emotion. See below for options.")
 	narratorMap = map[string]string{
@@ -133,6 +133,10 @@ func processTextFiles(dir string) {
 }
 
 func buildOptions(content, outputPath string) []string {
+	if *outputOpt != "" {
+		// Override directory output
+		outputPath = filepath.Join(*outputOpt, convertWavExt(filepath.Base(outputPath)))
+	}
 	options := []string{"-s", content, "-o", outputPath}
 
 	addOption := func(key string, value string) {
@@ -155,10 +159,6 @@ func buildOptions(content, outputPath string) []string {
 	}
 	if ok {
 		addOption("--emotion", emotion)
-	}
-
-	if *outputOpt != "" {
-		addOption("-o", *outputOpt)
 	}
 
 	return options

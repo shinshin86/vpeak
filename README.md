@@ -22,6 +22,9 @@ vpeak -d your-dir
 
 # option (narrator: Japanese Female 1, emotion: happy)
 vpeak -n f1 -e happy -d your-dir
+
+# option (narrator: Japanese Female 1, emotion: happy, output dir: your-dir-2)
+vpeak -n f1 -e happy -o your-dir-2 -d your-dir
 ```
 
 Multiple options can be combined.
