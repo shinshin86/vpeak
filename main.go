@@ -21,6 +21,7 @@ var (
 	outputOpt   = flag.String("o", WavName, "Output file path (Specify the name of the output directory if reading by directory (-d option))")
 	narratorOpt = flag.String("n", "", "Specify the narrator. See below for options.")
 	emotionOpt  = flag.String("e", "", "Specify the emotion. See below for options.")
+	silentOpt   = flag.Bool("silent", false, "Silent mode (no sound)")
 	narratorMap = map[string]string{
 		"f1": "Japanese Female 1",
 		"f2": "Japanese Female 2",
@@ -88,11 +89,13 @@ func executeCommands(options []string, output string) {
 	cmd1 := vpCmd(options)
 	handleError(cmd1.Run(), "voicepeak command failed")
 
-	cmd2 := playCmd(output)
-	handleError(cmd2.Run(), "wav file play failed")
+	if !*silentOpt {
+		cmd2 := playCmd(output)
+		handleError(cmd2.Run(), "wav file play failed")
 
-	if output == WavName {
-		handleError(os.Remove(WavName), fmt.Sprintf("Failed to delete %s", WavName))
+		if output == WavName {
+			handleError(os.Remove(WavName), fmt.Sprintf("Failed to delete %s", WavName))
+		}
 	}
 }
 

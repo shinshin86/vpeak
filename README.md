@@ -40,6 +40,14 @@ Run the `help` command for more information.
 vpeak -h
 ```
 
+### Silent mode
+
+With the `-silent` option, no voice reading is performed. It also does not automatically delete the generated files. This option is useful for only generating audio files.
+
+```
+vpeak -silent "こんにちは"
+```
+
 ## Support
 Tested only under the following conditions.
 
