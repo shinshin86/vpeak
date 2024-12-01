@@ -9,6 +9,18 @@
 ---
 ## CLI Usage
 
+### Installation
+
+To install `vpeak` as a CLI tool, run the following command:
+
+```sh
+go install github.com/shinshin86/vpeak/cmd/vpeak@latest
+```
+
+This will download, build, and install the vpeak binary to your $GOBIN directory (usually $HOME/go/bin).
+
+### Usage
+
 Execute the following command to have VOICEPEAK speak the string passed as an argument:
 
 ```sh
