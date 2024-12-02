@@ -72,7 +72,7 @@ func GenerateSpeech(text string, opts Options) error {
 		}
 
 		// if the output is not specified, delete the generated wav file
-		if output == WavName {
+		if runtime.GOOS != "windows" && output == WavName {
 			if err := os.Remove(WavName); err != nil {
 				return fmt.Errorf("failed to delete %s: %v", WavName, err)
 			}
