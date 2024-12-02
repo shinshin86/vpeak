@@ -7,12 +7,24 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
+var VoicepeakPath string
+
+func init() {
+	if runtime.GOOS == "darwin" {
+		VoicepeakPath = "/Applications/voicepeak.app/Contents/MacOS/voicepeak"
+	} else if runtime.GOOS == "windows" {
+		VoicepeakPath = "C:\\Program Files\\VOICEPEAK\\voicepeak.exe"
+	} else {
+		log.Fatal("Unsupported operating system")
+	}
+}
+
 const (
-	VoicepeakPath = "/Applications/voicepeak.app/Contents/MacOS/voicepeak"
-	WavName       = "output.wav"
+	WavName = "output.wav"
 )
 
 var (
@@ -72,7 +84,15 @@ func GenerateSpeech(text string, opts Options) error {
 
 // PlayAudio plays the specified audio file
 func PlayAudio(wavName string) error {
-	cmd := exec.Command("afplay", wavName)
+	var cmd *exec.Cmd
+	if runtime.GOOS == "darwin" {
+		cmd = exec.Command("afplay", wavName)
+	} else if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", "start", "", wavName)
+	} else {
+		return fmt.Errorf("unsupported operating system")
+	}
+
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("wav file play failed: %v", err)
 	}
