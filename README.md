@@ -7,6 +7,16 @@
 - **Go Library**: Import `vpeak` into your Go projects to generate speech programmatically.
 
 ---
+## Handling Audio Files: Platform Differences
+
+### About audio files (.wav)
+
+The behavior of audio file handling depends on the options provided:
+
+- **On macOS**: Temporary `.wav` files are automatically deleted after playback unless explicitly preserved using the `-silent`, `-o`, or `-d` options.
+- **On Windows**: `.wav` files are never automatically deleted after playback, ensuring compatibility with Windows' file handling.
+You may need to manually delete the files after playback if you don't want them to persist.
+---
 ## CLI Usage
 
 ### Installation
