@@ -185,16 +185,18 @@ func main() {
 vpeak is currently tested under the following conditions. Compatibility with other environments is not guaranteed.
 
 ### OS
-- M1 or later (arm64) Macs only.
+- macOS: M1 or later (arm64)
+- Windows: Windows 11 (64-bit)
+
+(We have not tested outside of these versions.)
 
 ### VOICEPEAK
-- VOICEPEAK must be updated to the latest version.
-- Tested with version **1.2.7**.
+- Updated to the latest version (tested with `1.2.7`)
+- Default paths for macOS & Windows are defined in [the code](https://github.com/shinshin86/vpeak/blob/main/vpeak.go#L16-L24).
+If VOICEPEAK is installed elsewhere, update the VoicepeakPath variable.
 
-## Notes
-
-- Ensure that VOICEPEAK is installed at the path specified in the code (`/Applications/voicepeak.app/Contents/MacOS/voicepeak`). If it is installed elsewhere, you may need to adjust the `VoicepeakPath` constant in the code.
-- The library functions provide error handling by returning errors, allowing you to handle them appropriately in your application.
+### Other OS
+- Currently, Linux and other operating systems are not supported.
 
 ## License
 [MIT](./LICENSE)
