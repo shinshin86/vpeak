@@ -55,6 +55,9 @@ vpeak -n f1 -e happy -d your-dir
 
 # option (narrator: Japanese Female 1, emotion: happy, output dir: your-dir-2)
 vpeak -n f1 -e happy -o your-dir-2 -d your-dir
+
+# option (speed: 120, pitch: 20)
+vpeak -speed 120 -pitch 20 "こんにちは"
 ```
 
 ### Silent mode
@@ -119,6 +122,12 @@ func main() {
         Emotion:  "happy",    // Emotion option (e.g., "happy", "sad")
         Output:   "hello.wav",// Output file path
         Silent:   false,      // Silent mode (true or false)
+        // Speed and Pitch accept *int. Use local variables to set values.
+        // Example:
+        // speed := 120
+        // pitch := 30
+        // opts.Speed = &speed
+        // opts.Pitch = &pitch
     }
 
     if err := vpeak.GenerateSpeech(text, opts); err != nil {
@@ -147,6 +156,8 @@ func main() {
   - If no option is specified, it will be `natural`.
 - `Output`: Specify the output file path. If not set, defaults to `output.wav`.
 - `Silent`: Set to `true` to disable voice playback.
+- `Speed`: Adjust speech speed (50–200). Provide as `*int`; `nil` keeps the VOICEPEAK default.
+- `Pitch`: Adjust pitch (-300–300). Provide as `*int`; `nil` keeps the VOICEPEAK default.
 
 ### Processing Text Files in a Directory
 
