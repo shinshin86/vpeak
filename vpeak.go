@@ -51,6 +51,8 @@ type Options struct {
 	Emotion  string
 	Output   string
 	Silent   bool
+	Speed    *int
+	Pitch    *int
 }
 
 // GenerateSpeech generates speech audio from the given text and options
@@ -167,6 +169,14 @@ func buildOptions(text string, opts Options) []string {
 
 	if opts.Output != "" {
 		options = append([]string{"-o", opts.Output}, options...)
+	}
+
+	if opts.Speed != nil {
+		options = append(options, "--speed", fmt.Sprintf("%d", *opts.Speed))
+	}
+
+	if opts.Pitch != nil {
+		options = append(options, "--pitch", fmt.Sprintf("%d", *opts.Pitch))
 	}
 
 	return options
