@@ -10,6 +10,8 @@ import (
 	"github.com/shinshin86/vpeak"
 )
 
+var version = "dev"
+
 func main() {
 	var (
 		dirOpt      = flag.String("d", "", "Directory to read files from")
@@ -19,6 +21,7 @@ func main() {
 		speedOpt    = flag.String("speed", "", "Specify the speech speed (50-200)")
 		pitchOpt    = flag.String("pitch", "", "Specify the pitch adjustment (-300 - 300)")
 		silentOpt   = flag.Bool("silent", false, "Silent mode (no sound)")
+		versionOpt  = flag.Bool("version", false, "Show version")
 	)
 
 	flag.Usage = func() {
@@ -46,6 +49,11 @@ func main() {
 
 	if *help {
 		flag.Usage()
+		os.Exit(0)
+	}
+
+	if *versionOpt {
+		fmt.Println(version)
 		os.Exit(0)
 	}
 

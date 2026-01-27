@@ -21,6 +21,50 @@ You may need to manually delete the files after playback if you don't want them 
 
 ### Installation
 
+#### Recommended (prebuilt binaries)
+
+macOS (curl):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/shinshin86/vpeak/main/install.sh | bash
+```
+
+Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/shinshin86/vpeak/main/install.ps1 | iex
+```
+
+Note: the macOS installer places `vpeak` in `~/.local/bin` by default. Set `BIN_DIR` to change the install path if needed.
+
+Verify:
+
+```sh
+vpeak --version
+```
+
+Update to a specific version:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/shinshin86/vpeak/main/install.sh | bash -s -- vX.Y.Z
+```
+
+```powershell
+irm https://raw.githubusercontent.com/shinshin86/vpeak/main/install.ps1 | iex -Version vX.Y.Z
+```
+
+Uninstall:
+
+```sh
+rm -f ~/.local/bin/vpeak
+```
+
+```powershell
+Remove-Item "$env:LOCALAPPDATA\\Programs\\vpeak\\vpeak.exe"
+```
+
+#### Go install (source)
+
 To install `vpeak` as a CLI tool, run the following command:
 
 ```sh
