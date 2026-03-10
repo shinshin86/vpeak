@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"strconv"
 )
 
 var VoicepeakPath string
@@ -37,12 +38,6 @@ var (
 		"m3": "Japanese Male 3",
 		"c":  "Japanese Female Child",
 	}
-	emotionMap = map[string]string{
-		"happy": "happy=100",
-		"fun":   "fun=100",
-		"angry": "angry=100",
-		"sad":   "sad=100",
-	}
 )
 
 // Options struct holds the settings for speech generation
@@ -53,6 +48,31 @@ type Options struct {
 	Silent   bool
 	Speed    *int
 	Pitch    *int
+}
+
+type Emotion struct {
+	Happy int
+	Sad   int
+	Angry int
+	Fun   int
+}
+
+func (e Emotion) String() string {
+	values := map[string]int{
+		"happy": e.Happy,
+		"sad":   e.Sad,
+		"angry": e.Angry,
+		"fun":   e.Fun,
+	}
+
+	var parts []string
+	for k, v := range values {
+		if v != 0 {
+			parts = append(parts, fmt.Sprintf("%s=%d", k, v))
+		}
+	}
+
+	return strings.Join(parts, ",")
 }
 
 // GenerateSpeech generates speech audio from the given text and options
@@ -138,6 +158,43 @@ func ProcessTextFiles(dir string, opts Options) error {
 	return nil
 }
 
+// ParseEmotion validates and normalizes an emotion option string.
+func ParseEmotion(s string) (Emotion, error) {
+	var e Emotion
+	if s == "" {
+		return e, nil
+	}
+
+	for _, p := range strings.Split(s, ",") {
+		kv := strings.SplitN(p, "=", 2)
+		name := kv[0]
+
+		val := 100
+		if len(kv) == 2 {
+			v, err := strconv.Atoi(kv[1])
+			if err != nil || v < 0 || v > 100 {
+				return e, fmt.Errorf("invalid value: %s", kv[1])
+			}
+			val = v
+		}
+
+		switch name {
+		case "happy":
+			e.Happy = val
+		case "sad":
+			e.Sad = val
+		case "angry":
+			e.Angry = val
+		case "fun":
+			e.Fun = val
+		default:
+			return e, fmt.Errorf("invalid emotion: %s", name)
+		}
+	}
+
+	return e, nil
+}
+
 func vpCmd(options []string) *exec.Cmd {
 	_, err := exec.LookPath(VoicepeakPath)
 	if err != nil {
@@ -161,11 +218,11 @@ func buildOptions(text string, opts Options) []string {
 		log.Fatalf("Invalid narrator option: %s", opts.Narrator)
 	}
 
-	if emotion, ok := emotionMap[opts.Emotion]; ok {
-		options = append([]string{"--emotion", emotion}, options...)
-	} else if opts.Emotion != "" {
+	emotion, err := ParseEmotion(opts.Emotion)
+	if err != nil {
 		log.Fatalf("Invalid emotion option: %s", opts.Emotion)
 	}
+	options = append([]string{"--emotion", emotion.String()}, options...)
 
 	if opts.Output != "" {
 		options = append([]string{"-o", opts.Output}, options...)
