@@ -192,11 +192,15 @@ func main() {
   - `m2`: Japanese Male 2
   - `m3`: Japanese Male 3
   - `c`:  Japanese Female Child
-- `Emotion`: Choose the emotion. Available options:
+- `Emotion`: Specify emotion values (`0`–`100`) for the following emotions:
   - `happy`
   - `fun`
   - `angry`
   - `sad`
+  - Multiple emotions can be specified using commas. Example:
+    - `happy`
+    - `happy=50`
+    - `happy=40,fun=60`
   - If no option is specified, it will be `natural`.
 - `Output`: Specify the output file path. If not set, defaults to `output.wav`.
 - `Silent`: Set to `true` to disable voice playback.
