@@ -75,6 +75,10 @@ func (e Emotion) String() string {
 	return strings.Join(parts, ",")
 }
 
+func (e Emotion) IsZero() bool {
+	return e.Happy == 0 && e.Sad == 0 && e.Angry == 0 && e.Fun == 0
+}
+
 // GenerateSpeech generates speech audio from the given text and options
 func GenerateSpeech(text string, opts Options) error {
 	options := buildOptions(text, opts)
@@ -222,7 +226,9 @@ func buildOptions(text string, opts Options) []string {
 	if err != nil {
 		log.Fatalf("Invalid emotion option: %s", opts.Emotion)
 	}
-	options = append([]string{"--emotion", emotion.String()}, options...)
+	if !emotion.IsZero() {
+		options = append([]string{"--emotion", emotion.String()}, options...)
+	}
 
 	if opts.Output != "" {
 		options = append([]string{"-o", opts.Output}, options...)
