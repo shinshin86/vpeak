@@ -8,8 +8,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 var VoicepeakPath string
