@@ -5,6 +5,7 @@
 
 - **CLI Tool**: Use `vpeak` from the command line to generate speech audio.
 - **Go Library**: Import `vpeak` into your Go projects to generate speech programmatically.
+- **Dictionary Management**: Read, write, import, export, and update VOICEPEAK's user dictionary (`dic.json`) from both the CLI and the Go library.
 
 ---
 ## Handling Audio Files: Platform Differences
@@ -124,6 +125,47 @@ Run the `help` command for more information.
 vpeak -h
 ```
 
+### Dictionary commands
+
+`vpeak` can also operate on VOICEPEAK's user dictionary file.
+
+```sh
+# Show the default dictionary path
+vpeak dict path
+
+# List the current dictionary as JSON
+vpeak dict list
+
+# Add a dictionary entry
+vpeak dict add \
+  --surface "GitHub" \
+  --pronunciation "ギットハブ" \
+  --pos "Japanese_Koyuumeishi_ippan" \
+  --accent-type 0 \
+  --priority 5
+
+# Update an entry identified by its current surface
+vpeak dict update-by-surface \
+  --current-surface "GitHub" \
+  --surface "GitHub Actions" \
+  --pronunciation "ギットハブアクションズ" \
+  --pos "Japanese_Koyuumeishi_ippan" \
+  --accent-type 3 \
+  --priority 5
+
+# Delete an entry by surface
+vpeak dict delete-by-surface --surface "GitHub Actions"
+
+# Import/export the native dictionary JSON format
+vpeak dict export --export-file ./dic-export.json
+vpeak dict import --import-file ./dic-export.json --override
+```
+
+Notes:
+- The default dictionary path is resolved automatically for macOS and Windows.
+- Entries are matched by `surface` for update and delete operations.
+- If the same `surface` appears multiple times in the dictionary, update/delete operations fail with a conflict so the caller can resolve ambiguity explicitly.
+
 ---
 ## Library Usage
 
@@ -231,6 +273,38 @@ func main() {
     }
 
     fmt.Println("Text files processed successfully.")
+}
+```
+
+### Dictionary library usage
+
+You can manage VOICEPEAK's native dictionary format directly from Go:
+
+```go
+package main
+
+import (
+    "log"
+
+    "github.com/shinshin86/vpeak"
+)
+
+func main() {
+    path, err := vpeak.DefaultDictionaryPath()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    if err := vpeak.AddDictionaryWord(path, vpeak.DictEntry{
+        Surface:       "GitHub",
+        Pronunciation: "ギットハブ",
+        Pos:           "Japanese_Koyuumeishi_ippan",
+        Priority:      5,
+        AccentType:    0,
+        Lang:          "ja",
+    }); err != nil {
+        log.Fatal(err)
+    }
 }
 ```
 
