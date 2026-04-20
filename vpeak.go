@@ -8,8 +8,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 var VoicepeakPath string
@@ -58,20 +58,19 @@ type Emotion struct {
 }
 
 func (e Emotion) String() string {
-	values := map[string]int{
-		"happy": e.Happy,
-		"sad":   e.Sad,
-		"angry": e.Angry,
-		"fun":   e.Fun,
-	}
-
 	var parts []string
-	for k, v := range values {
-		if v != 0 {
-			parts = append(parts, fmt.Sprintf("%s=%d", k, v))
-		}
+	if e.Happy != 0 {
+		parts = append(parts, fmt.Sprintf("happy=%d", e.Happy))
 	}
-
+	if e.Fun != 0 {
+		parts = append(parts, fmt.Sprintf("fun=%d", e.Fun))
+	}
+	if e.Angry != 0 {
+		parts = append(parts, fmt.Sprintf("angry=%d", e.Angry))
+	}
+	if e.Sad != 0 {
+		parts = append(parts, fmt.Sprintf("sad=%d", e.Sad))
+	}
 	return strings.Join(parts, ",")
 }
 
