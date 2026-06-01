@@ -1,6 +1,7 @@
 package vpeak
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -198,6 +199,100 @@ func ParseEmotion(s string) (Emotion, error) {
 	return e, nil
 }
 
+// ListNarrators returns narrator names installed in VOICEPEAK.
+func ListNarrators() ([]string, error) {
+	return voicepeakList("--list-narrator")
+}
+
+// ListEmotions returns emotion names available for the given narrator.
+func ListEmotions(narrator string) ([]string, error) {
+	narrator = resolveNarratorName(narrator)
+	if narrator == "" {
+		return nil, fmt.Errorf("narrator is required")
+	}
+
+	return voicepeakList("--list-emotion", narrator)
+}
+
+// ValidateEmotionExpression validates and normalizes a VOICEPEAK emotion expression.
+func ValidateEmotionExpression(raw string, allowed []string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", nil
+	}
+
+	allowedSet := map[string]struct{}{}
+	for _, name := range allowed {
+		allowedSet[name] = struct{}{}
+	}
+
+	for _, part := range strings.Split(raw, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			return "", fmt.Errorf("empty emotion segment")
+		}
+
+		name, value, hasValue := strings.Cut(part, "=")
+		name = strings.TrimSpace(name)
+		if name == "" {
+			return "", fmt.Errorf("empty emotion name")
+		}
+		if _, ok := allowedSet[name]; !ok {
+			return "", fmt.Errorf("invalid emotion: %s", name)
+		}
+
+		if !hasValue {
+			continue
+		}
+		value = strings.TrimSpace(value)
+		if value == "" {
+			return "", fmt.Errorf("empty emotion value for %s", name)
+		}
+		weight, err := strconv.Atoi(value)
+		if err != nil {
+			return "", fmt.Errorf("invalid emotion weight for %s: %w", name, err)
+		}
+		if weight < 0 || weight > 100 {
+			return "", fmt.Errorf("emotion weight for %s must be between 0 and 100", name)
+		}
+	}
+
+	return raw, nil
+}
+
+func voicepeakList(args ...string) ([]string, error) {
+	cmd := vpCmd(args)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		output = bytes.TrimSpace(output)
+		if len(output) == 0 {
+			return nil, fmt.Errorf("voicepeak command failed: %w", err)
+		}
+		return nil, fmt.Errorf("voicepeak command failed: %w: %s", err, output)
+	}
+
+	return parseVoicepeakListOutput(string(output)), nil
+}
+
+func parseVoicepeakListOutput(output string) []string {
+	var items []string
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "[debug]") || strings.HasPrefix(line, "iconv_open ") {
+			continue
+		}
+		items = append(items, line)
+	}
+	return items
+}
+
+func resolveNarratorName(narrator string) string {
+	if resolved, ok := narratorMap[narrator]; ok {
+		return resolved
+	}
+	return narrator
+}
+
 func vpCmd(options []string) *exec.Cmd {
 	_, err := exec.LookPath(VoicepeakPath)
 	if err != nil {
@@ -215,18 +310,26 @@ func convertWavExt(filename string) string {
 func buildOptions(text string, opts Options) []string {
 	options := []string{"-s", text}
 
-	if narrator, ok := narratorMap[opts.Narrator]; ok {
+	narrator := resolveNarratorName(opts.Narrator)
+	if narrator != "" {
 		options = append([]string{"--narrator", narrator}, options...)
-	} else if opts.Narrator != "" {
-		log.Fatalf("Invalid narrator option: %s", opts.Narrator)
 	}
 
-	emotion, err := ParseEmotion(opts.Emotion)
-	if err != nil {
-		log.Fatalf("Invalid emotion option: %s", opts.Emotion)
-	}
-	if !emotion.IsZero() {
-		options = append([]string{"--emotion", emotion.String()}, options...)
+	if opts.Emotion != "" {
+		emotion := strings.TrimSpace(opts.Emotion)
+		if narrator != "" {
+			allowed, err := ListEmotions(narrator)
+			if err != nil {
+				log.Fatalf("Failed to list emotions for narrator %q: %v", narrator, err)
+			}
+			if _, err := ValidateEmotionExpression(emotion, allowed); err != nil {
+				log.Fatalf("Invalid emotion option: %s", opts.Emotion)
+			}
+		} else if _, err := ParseEmotion(emotion); err != nil {
+			log.Fatalf("Invalid emotion option: %s", opts.Emotion)
+		}
+
+		options = append([]string{"--emotion", emotion}, options...)
 	}
 
 	if opts.Output != "" {
