@@ -162,3 +162,88 @@ Zundamon
 		}
 	}
 }
+
+func TestNormalizeEmotionExpression(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		want    string
+		wantErr bool
+	}{
+		{"empty", "", "", false},
+		{"bare name expands to 100", "happy", "happy=100", false},
+		{"dynamic bare name expands to 100", "amaama", "amaama=100", false},
+		{"explicit value kept", "happy=50", "happy=50", false},
+		{"multiple", "happy=40,fun=60", "happy=40,fun=60", false},
+		{"dynamic names kept", "amaama=40,live=60", "amaama=40,live=60", false},
+		{"input order preserved", "sad=10,happy=20", "sad=10,happy=20", false},
+		{"trim outer whitespace", " amaama=40,live=60 ", "amaama=40,live=60", false},
+		{"zero dropped", "happy=0", "", false},
+		{"zero dropped among others", "happy=0,fun=60", "fun=60", false},
+		{"max", "happy=100", "happy=100", false},
+		{"empty value", "happy=", "", true},
+		{"empty segment", "happy=50,,fun=50", "", true},
+		{"leading comma", ",happy=50", "", true},
+		{"trailing comma", "happy=50,", "", true},
+		{"non integer", "happy=foo", "", true},
+		{"negative", "happy=-1", "", true},
+		{"too high", "happy=101", "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := normalizeEmotionExpression(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("normalizeEmotionExpression(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
+			}
+			if got != tt.want {
+				t.Fatalf("normalizeEmotionExpression(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestBuildOptionsEmotion(t *testing.T) {
+	flagValue := func(opts []string, flag string) (string, bool) {
+		for i, o := range opts {
+			if o == flag && i+1 < len(opts) {
+				return opts[i+1], true
+			}
+		}
+		return "", false
+	}
+
+	t.Run("bare emotion expands to 100", func(t *testing.T) {
+		opts := buildOptions("hi", Options{Narrator: "f1", Emotion: "happy"})
+		if v, _ := flagValue(opts, "--narrator"); v != "Japanese Female 1" {
+			t.Fatalf("--narrator = %q, want %q", v, "Japanese Female 1")
+		}
+		if v, _ := flagValue(opts, "--emotion"); v != "happy=100" {
+			t.Fatalf("--emotion = %q, want %q", v, "happy=100")
+		}
+	})
+
+	t.Run("dynamic emotion names pass through", func(t *testing.T) {
+		opts := buildOptions("hi", Options{Narrator: "Zundamon", Emotion: "amaama=40,live=60"})
+		if v, _ := flagValue(opts, "--narrator"); v != "Zundamon" {
+			t.Fatalf("--narrator = %q, want %q", v, "Zundamon")
+		}
+		if v, _ := flagValue(opts, "--emotion"); v != "amaama=40,live=60" {
+			t.Fatalf("--emotion = %q, want %q", v, "amaama=40,live=60")
+		}
+	})
+
+	t.Run("all-zero emotion omits --emotion", func(t *testing.T) {
+		opts := buildOptions("hi", Options{Narrator: "f1", Emotion: "happy=0"})
+		if _, ok := flagValue(opts, "--emotion"); ok {
+			t.Fatalf("--emotion should be omitted for all-zero emotion, got %v", opts)
+		}
+	})
+
+	t.Run("no emotion omits --emotion", func(t *testing.T) {
+		opts := buildOptions("hi", Options{Narrator: "f1"})
+		if _, ok := flagValue(opts, "--emotion"); ok {
+			t.Fatalf("--emotion should be omitted when no emotion given, got %v", opts)
+		}
+	})
+}

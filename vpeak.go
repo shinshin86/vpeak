@@ -89,7 +89,8 @@ func GenerateSpeech(text string, opts Options) error {
 
 	cmd1 := vpCmd(options)
 	if err := cmd1.Run(); err != nil {
-		return fmt.Errorf("voicepeak command failed: %v", err)
+		return fmt.Errorf("voicepeak command failed: %w "+
+			"(check that the specified narrator and emotion names are supported by VOICEPEAK)", err)
 	}
 
 	if !opts.Silent {
@@ -260,6 +261,55 @@ func ValidateEmotionExpression(raw string, allowed []string) (string, error) {
 	return raw, nil
 }
 
+// normalizeEmotionExpression validates an emotion expression syntactically and
+// returns it in a canonical form. Any emotion name is accepted so that character
+// products with their own emotions work; whether the name is actually supported
+// is left to VOICEPEAK. Bare names are expanded to "name=100" and zero-weighted
+// emotions are dropped, matching the previous Emotion.String behavior.
+func normalizeEmotionExpression(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", nil
+	}
+
+	var parts []string
+	for _, part := range strings.Split(raw, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			return "", fmt.Errorf("empty emotion segment")
+		}
+
+		name, value, hasValue := strings.Cut(part, "=")
+		name = strings.TrimSpace(name)
+		if name == "" {
+			return "", fmt.Errorf("empty emotion name")
+		}
+
+		weight := 100
+		if hasValue {
+			value = strings.TrimSpace(value)
+			if value == "" {
+				return "", fmt.Errorf("empty emotion value for %s", name)
+			}
+			w, err := strconv.Atoi(value)
+			if err != nil {
+				return "", fmt.Errorf("invalid emotion weight for %s: %w", name, err)
+			}
+			if w < 0 || w > 100 {
+				return "", fmt.Errorf("emotion weight for %s must be between 0 and 100", name)
+			}
+			weight = w
+		}
+
+		if weight == 0 {
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("%s=%d", name, weight))
+	}
+
+	return strings.Join(parts, ","), nil
+}
+
 func voicepeakList(args ...string) ([]string, error) {
 	cmd := vpCmd(args)
 	output, err := cmd.CombinedOutput()
@@ -316,20 +366,13 @@ func buildOptions(text string, opts Options) []string {
 	}
 
 	if opts.Emotion != "" {
-		emotion := strings.TrimSpace(opts.Emotion)
-		if narrator != "" {
-			allowed, err := ListEmotions(narrator)
-			if err != nil {
-				log.Fatalf("Failed to list emotions for narrator %q: %v", narrator, err)
-			}
-			if _, err := ValidateEmotionExpression(emotion, allowed); err != nil {
-				log.Fatalf("Invalid emotion option: %s", opts.Emotion)
-			}
-		} else if _, err := ParseEmotion(emotion); err != nil {
+		emotion, err := normalizeEmotionExpression(opts.Emotion)
+		if err != nil {
 			log.Fatalf("Invalid emotion option: %s", opts.Emotion)
 		}
-
-		options = append([]string{"--emotion", emotion}, options...)
+		if emotion != "" {
+			options = append([]string{"--emotion", emotion}, options...)
+		}
 	}
 
 	if opts.Output != "" {
