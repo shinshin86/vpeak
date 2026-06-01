@@ -1,10 +1,11 @@
 # vpeak
-`vpeak` is a tool that allows you to interact with [VOICEPEAK](https://www.ah-soft.com/voice/6nare/) from the command line or within your Go applications.
+`vpeak` is a tool that allows you to interact with [VOICEPEAK](https://www.ah-soft.com/voice/) from the command line or within your Go applications.
 
 ## Features
 
 - **CLI Tool**: Use `vpeak` from the command line to generate speech audio.
 - **Go Library**: Import `vpeak` into your Go projects to generate speech programmatically.
+- **Installed VOICEPEAK Narrators**: Use any narrator package installed in the local VOICEPEAK app, including character products and add-on narrator products.
 - **Dictionary Management**: Read, write, import, export, and update VOICEPEAK's user dictionary (`dic.json`) from both the CLI and the Go library.
 
 ---
@@ -234,15 +235,12 @@ func main() {
   - `m2`: Japanese Male 2
   - `m3`: Japanese Male 3
   - `c`:  Japanese Female Child
-- `Emotion`: Specify emotion values (`0`–`100`) for the following emotions:
+  - Installed VOICEPEAK narrator names are also accepted directly. Use VOICEPEAK's `--list-narrator` to see the names available on your machine.
+- `Emotion`: Specify emotion values (`0`–`100`) using emotion names reported by VOICEPEAK for the selected narrator. Different character products can expose different emotion names. Multiple emotions can be specified using commas. Example:
   - `happy`
-  - `fun`
-  - `angry`
-  - `sad`
-  - Multiple emotions can be specified using commas. Example:
-    - `happy`
-    - `happy=50`
-    - `happy=40,fun=60`
+  - `happy=50`
+  - `happy=40,fun=60`
+  - `amaama=40,live=60`
   - If no option is specified, it will be `natural`.
 - `Output`: Specify the output file path. If not set, defaults to `output.wav`.
 - `Silent`: Set to `true` to disable voice playback.

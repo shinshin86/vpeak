@@ -84,3 +84,81 @@ func TestEmotionIsZero(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateEmotionExpression(t *testing.T) {
+	allowed := []string{"amaama", "aori", "live"}
+	tests := []struct {
+		name    string
+		input   string
+		want    string
+		wantErr bool
+	}{
+		{"empty", "", "", false},
+		{"single name", "amaama", "amaama", false},
+		{"single weighted", "amaama=50", "amaama=50", false},
+		{"multiple weighted", "amaama=40,live=60", "amaama=40,live=60", false},
+		{"trim", " amaama=40,live=60 ", "amaama=40,live=60", false},
+		{"zero", "amaama=0", "amaama=0", false},
+		{"max", "amaama=100", "amaama=100", false},
+		{"unknown name", "happy=50", "", true},
+		{"empty value", "amaama=", "", true},
+		{"empty segment", "amaama=50,,live=50", "", true},
+		{"leading comma", ",amaama=50", "", true},
+		{"trailing comma", "amaama=50,", "", true},
+		{"non integer", "amaama=foo", "", true},
+		{"negative", "amaama=-1", "", true},
+		{"too high", "amaama=101", "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ValidateEmotionExpression(tt.input, allowed)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("ValidateEmotionExpression(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
+			}
+			if got != tt.want {
+				t.Fatalf("ValidateEmotionExpression(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestResolveNarratorName(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"legacy alias", "f1", "Japanese Female 1"},
+		{"formal name", "Zundamon", "Zundamon"},
+		{"empty", "", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := resolveNarratorName(tt.input); got != tt.want {
+				t.Fatalf("resolveNarratorName(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseVoicepeakListOutput(t *testing.T) {
+	output := `[debug][1780286975][voicepeak.GeneralDebug] UserApplication Folder: /Users/example/Library/Application Support/Dreamtonics/Voicepeak
+iconv_open is not supported
+Tohoku Zunko
+Zundamon
+
+`
+
+	got := parseVoicepeakListOutput(output)
+	want := []string{"Tohoku Zunko", "Zundamon"}
+	if len(got) != len(want) {
+		t.Fatalf("parseVoicepeakListOutput() = %#v, want %#v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("parseVoicepeakListOutput()[%d] = %q, want %q", i, got[i], want[i])
+		}
+	}
+}
